@@ -2,6 +2,15 @@ const ui = document.getElementById('ui');
 const satirSayisi = 120;
 const elemanlar = [];
 
+// Telefon ve masaüstü ekran genişliğine göre kalbin boyutunu dinamik ayarlıyoruz
+const ekranGenisligi = window.innerWidth;
+const isMobil = ekranGenisligi < 768;
+
+// Mobilde kalbi daraltıp ekrana sığdırıyoruz, masaüstünde büyük bırakıyoruz
+const carpanX = isMobil ? ekranGenisligi * 0.024 : 15.5;
+const carpanY = isMobil ? ekranGenisligi * 0.022 : 14.5;
+const maxItmeMesafesi = isMobil ? 40 : 80; // Mobilde çok uzağa patlayıp ekrandan çıkmasınlar diye
+
 for (let i = 0; i < satirSayisi; i++) {
     const row = document.createElement('div');
     row.className = 'love_horizontal';
@@ -11,24 +20,23 @@ for (let i = 0; i < satirSayisi; i++) {
     span.className = 'love_word';
     span.innerText = 'I love you';
 
-    // Kalp formülü hesabı
     const t = (i / satirSayisi) * Math.PI * 2;
     const x = 16 * Math.pow(Math.sin(t), 3);
     const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
 
-    const baseX = x * 15.5;
-    const baseY = -y * 14.5;
+    // Dinamik çarpanlarla hesaplanan tam uyumlu koordinatlar
+    const baseX = x * carpanX;
+    const baseY = -y * carpanY;
 
-    // İlk açılışta kalbi merkeze yerleştiriyoruz
     row.style.transform = `translate(${baseX}px, ${baseY}px)`;
 
-    // Merkezden dışarıya doğru patlama doğrultusu
+    // Merkezden dışarı doğru yön hesabı
     const uzunluk = Math.sqrt(baseX * baseX + baseY * baseY);
     const yonX = uzunluk > 0 ? (baseX / uzunluk) : 0;
     const yonY = uzunluk > 0 ? (baseY / uzunluk) : 0;
 
-    // Patladığında süzüleceği dış koordinatlar
-    const itmeMesafesi = 80 + Math.random() * 60;
+    // Patlama mesafesi sınırlandırıldı
+    const itmeMesafesi = maxItmeMesafesi + Math.random() * (maxItmeMesafesi * 0.6);
     const scatterX = baseX + yonX * itmeMesafesi;
     const scatterY = baseY + yonY * itmeMesafesi;
 
@@ -42,28 +50,28 @@ for (let i = 0; i < satirSayisi; i++) {
     });
 }
 
+// Hem dokunma hem tıklama için tek bir etkileşim yönetimi
 let tıklanabilir = true;
-window.addEventListener('click', () => {
+const patlatmaFonksiyonu = (e) => {
     if (!tıklanabilir) return;
     tıklanabilir = false;
 
-    // Dağılma başlar (Ağır çekimde, süzülerek dışarı akıyor)
     elemanlar.forEach(item => {
         item.element.classList.add('scatter');
         item.element.style.transform = item.scatter;
     });
 
-    // 0.20 saniye dağınık kalma süresi
     setTimeout(() => {
-        // Toparlanma başlar (Ağır çekimde süzülerek kalbe geri dönüyor)
         elemanlar.forEach(item => {
             item.element.classList.remove('scatter');
             item.element.style.transform = item.base;
         });
         
-        // CSS'teki 0.9s (900ms) toparlanma süresiyle senkronize kilit açma
         setTimeout(() => {
             tıklanabilir = true;
         }, 900);
     }, 200);
-});
+};
+
+// Mobil ve masaüstü tıklama tetikleyicileri
+window.addEventListener('click', patlatmaFonksiyonu);

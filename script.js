@@ -1,15 +1,13 @@
 const ui = document.getElementById('ui');
-const satirSayisi = 120;
+const satirSayisi = 80; // Mobilde kalbin pürüzsüz görünmesi için optimize edilmiş ideal satır sayısı
 const elemanlar = [];
 
-// Telefon ve masaüstü ekran genişliğine göre kalbin boyutunu dinamik ayarlıyoruz
+// Ekran genişliğine göre kalbin çapını telefon ekranına tam sığacak şekilde dinamik hesaplıyoruz
 const ekranGenisligi = window.innerWidth;
 const isMobil = ekranGenisligi < 768;
 
-// Mobilde kalbi daraltıp ekrana sığdırıyoruz, masaüstünde büyük bırakıyoruz
-const carpanX = isMobil ? ekranGenisligi * 0.024 : 15.5;
-const carpanY = isMobil ? ekranGenisligi * 0.022 : 14.5;
-const maxItmeMesafesi = isMobil ? 40 : 80; // Mobilde çok uzağa patlayıp ekrandan çıkmasınlar diye
+// Telefonlar için ekranın %38'i kadar bir genişlik tanımlıyoruz (Asla taşamaz)
+const r = isMobil ? ekranGenisligi * 0.38 : 230; 
 
 for (let i = 0; i < satirSayisi; i++) {
     const row = document.createElement('div');
@@ -20,23 +18,40 @@ for (let i = 0; i < satirSayisi; i++) {
     span.className = 'love_word';
     span.innerText = 'I love you';
 
+    // Matematiksel Kalp Eğrisi açısı
     const t = (i / satirSayisi) * Math.PI * 2;
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
 
-    // Dinamik çarpanlarla hesaplanan tam uyumlu koordinatlar
-    const baseX = x * carpanX;
-    const baseY = -y * carpanY;
+    /* Standart Kalp Eğrisi Formülü (Normalize edilmiş hali) */
+    const x = Math.pow(Math.sin(t), 3);
+    const y = (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 16;
 
-    row.style.transform = `translate(${baseX}px, ${baseY}px)`;
+    // Ekrana tam oturan ana koordinatlar
+    const baseX = x * r;
+    const baseY = -y * r * 1.1; // Kalp formunun dikeyde daha dik durması için hafif uzattık
 
-    // Merkezden dışarı doğru yön hesabı
+    // Taşmayı önleyen sihirli dokunuş: Yazıları kalbin etrafındaki teğet açısına göre döndürüyoruz
+    // Teğet açısı hesabı (t açısına bağlı yön)
+    const dx = 3 * Math.pow(Math.sin(t), 2) * Math.cos(t);
+    const dy = (-13 * Math.sin(t) + 10 * Math.sin(2*t) + 6 * Math.sin(3*t) + 4 * Math.sin(4*t)) / 16;
+    let aci = Math.atan2(-dy, dx) * (180 / Math.PI);
+
+    // Yazıların baş aşağı gelmesini engelleyen yön düzeltmesi
+    if (aci > 90) aci -= 180;
+    if (aci < -90) aci += 180;
+
+    // Görseldeki o meşhur hafif -30deg estetik eğimi de üzerine ekliyoruz
+    const finalAci = aci - 30;
+
+    // İlk pozisyon (Merkez hizalı konumlandırma)
+    row.style.transform = `translate(${baseX}px, ${baseY}px) rotate(${finalAci}deg)`;
+
+    // Merkezden dışa doğru pürüzsüz süzülerek patlama yönü
     const uzunluk = Math.sqrt(baseX * baseX + baseY * baseY);
     const yonX = uzunluk > 0 ? (baseX / uzunluk) : 0;
     const yonY = uzunluk > 0 ? (baseY / uzunluk) : 0;
 
-    // Patlama mesafesi sınırlandırıldı
-    const itmeMesafesi = maxItmeMesafesi + Math.random() * (maxItmeMesafesi * 0.6);
+    // Telefon ekranına göre patlama mesafesi sınırı
+    const itmeMesafesi = isMobil ? 45 + Math.random() * 25 : 80 + Math.random() * 50;
     const scatterX = baseX + yonX * itmeMesafesi;
     const scatterY = baseY + yonY * itmeMesafesi;
 
@@ -45,33 +60,34 @@ for (let i = 0; i < satirSayisi; i++) {
 
     elemanlar.push({
         element: row,
-        base: `translate(${baseX}px, ${baseY}px)`,
-        scatter: `translate(${scatterX}px, ${scatterY}px)`
+        base: `translate(${baseX}px, ${baseY}px) rotate(${finalAci}deg)`,
+        scatter: `translate(${scatterX}px, ${scatterY}px) rotate(${finalAci}deg)`
     });
 }
 
-// Hem dokunma hem tıklama için tek bir etkileşim yönetimi
+// Akışkan patlama ve kilit yönetimi
 let tıklanabilir = true;
-const patlatmaFonksiyonu = (e) => {
+window.addEventListener('click', () => {
     if (!tıklanabilir) return;
     tıklanabilir = false;
 
+    // Süzülerek dışarı akma (Patlama)
     elemanlar.forEach(item => {
         item.element.classList.add('scatter');
         item.element.style.transform = item.scatter;
     });
 
+    // 0.20 saniye dağınık durma süresi
     setTimeout(() => {
+        // Süzülerek yerine oturma (Toparlanma)
         elemanlar.forEach(item => {
             item.element.classList.remove('scatter');
             item.element.style.transform = item.base;
         });
         
+        // CSS'teki 0.9s (900ms) süreyle tam senkronize kilit açma
         setTimeout(() => {
             tıklanabilir = true;
         }, 900);
     }, 200);
-};
-
-// Mobil ve masaüstü tıklama tetikleyicileri
-window.addEventListener('click', patlatmaFonksiyonu);
+});

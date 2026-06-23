@@ -1,0 +1,67 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #000;
+    margin: 0;
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    font-family: sans-serif;
+    position: relative;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+#ui {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    will-change: transform;
+    /* Ekran boyutuna göre otomatik ölçeklenme sağlayan sihirli satır */
+    transform: translate(0, 0) scale(var(--zoom-factor, 1));
+}
+
+#ui .love_horizontal {
+    position: absolute;
+    will-change: transform;
+    /* Geri toparlanırken süzülme hızı (0.9 saniye) */
+    transition: transform 0.9s cubic-bezier(0.25, 1, 0.2, 1.05), opacity 0.6s ease;
+}
+
+#ui .love_word {
+    color: #ea80b0;
+    font-size: 1.2rem; /* Orijinal dolgun yazı boyutu */
+    font-weight: bold;
+    text-shadow: 0 0 10px #fff, 0 0 20px #ea80b0;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    display: inline-block;
+    
+    /* GÖRSELDEKİ ORİJİNAL EĞİM VE SÜREKLİ DALGALANMA */
+    animation: horizontal 8000ms infinite alternate ease-in-out;
+    animation-delay: calc(var(--i) * -120ms);
+}
+
+/* İlk baştaki o çok beğendiğin orijinal 3 boyutlu dalgalanma efekti */
+@keyframes horizontal {
+    0% {
+        transform: translateY(-50%) rotateZ(-30deg) translate(-15px, -8px) scale(0.93);
+    }
+    100% {
+        transform: translateY(-50%) rotateZ(-30deg) translate(15px, 8px) scale(1.07);
+    }
+}
+
+/* Tıklandığında dışarı süzülme hızı (0.45 saniye) */
+#ui .love_horizontal.scatter {
+    transition: transform 0.45s cubic-bezier(0.1, 0.8, 0.25, 1);
+    opacity: 0.8;
+}
